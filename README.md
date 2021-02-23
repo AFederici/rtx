@@ -1,6 +1,6 @@
 # rtx
 References: 
-Uses are mentioned within the code as well
+Uses are mentioned within the code as well <br>
 https://illinois-cs419.github.io
 https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/creatingourfirstraytracedimage
 https://en.wikipedia.org/wiki/Line–sphere_intersection
