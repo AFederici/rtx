@@ -29,8 +29,10 @@ int Sphere::intersect(Ray& r){
     double q = -0.5 * (b + (sign(b)*sqrt(discrim)));
     if (close(discrim)) { h1.t = -b / (2.0*a); }//one intersection
     else if (discrim > 0){ //two intersection points
-        h1.t = c / q; 
-        h2.t = q / a; 
+        h1.t = (-b - sqrt(discrim)) / (2.0*a); 
+        //h2.t = q / a; 
+        //if ((h1.t > h2.t) && (h2.t >= T_MIN)) h1.t = (T_MIN) - 1;
+        //else h2.t = (T_MIN) - 1;
     }
     if ((h1.t >= T_MIN) && (h1.t <= T_MAX)) { h1.p = r.mult(h1.t); r.hits.push_back(h1); r.set_normal(norm(h1.p), r.hits.size() - 1); ret++;}
     if ((h2.t >= T_MIN) && (h2.t <= T_MAX)) { h2.p = r.mult(h2.t); r.hits.push_back(h2); r.set_normal(norm(h2.p), r.hits.size() - 1); ret++;}
@@ -47,7 +49,7 @@ Vec Sphere::norm(Point intersection){
 
 //pass in the norm, kinda ugly rn
 Color Plane::get_shading(Ray &r, int ind){
-    return 0.5*Color(r.hits[ind].normal.x+1, r.hits[ind].normal.y+1, r.hits[ind].normal.z+1);
+    return Color(1,0,0);
 }
 
 //https://math.stackexchange.com/questions/1755856/calculate-arbitrary-points-from-a-plane-equation
@@ -90,6 +92,24 @@ int Plane::intersect(Ray& r){
 }
 
 int Triangle::intersect(Ray &r){
+    /*
+    Vec e1 = toVec(p1,p3);
+    Vec e2 = toVec(p2,p3);
+    Vec q = r.dir.cross(e2);
+    double a = e1.dot(q);
+    if (a > -1e-5 && a < 1e-5) return 0;
+    double f = 1.0 / a;
+    Vec s = toVec(r.o,p3);
+    double u = f * (s.dot(q));
+    if (u < 0.0) return 0;
+    Vec rv = s.cross(e1);
+    double v = f * r.dir.dot(rv);
+    if (v < 0.0 || (u + v) > 1.0) return 0;
+    double t = f * (e2.dot(rv));
+    hit h1; h1.normal = norm(Point(p1)); h1.t = t; h1.p = Point(u,v,1.0-u-v); h1.shape_obj = this;
+    r.hits.push_back(h1);
+    return 1;
+    */
     if (!Plane::intersect(r)) return 0;
     int ind = r.hits.size() - 1;
     Point p = r.hits[ind].p;

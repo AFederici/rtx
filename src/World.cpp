@@ -53,16 +53,22 @@ int World::rayColor(Color & c, Ray &r) {
     int closest_t = T_MAX;
     int closest_ind = -1;
     cerr << "Ray Intersections:" << to_string(r.hits.size()) << endl;
-    for (int i = 0; i < r.hits.size(); i++){ if (r.hits[i].t < closest_t && r.hits[i].front_face) { closest_t = r.hits[i].t; closest_ind = i; } }
+    for (int i = 0; i < r.hits.size(); i++){ 
+        if (r.hits[i].t < closest_t) { 
+            closest_t = r.hits[i].t; 
+            closest_ind = i; 
+        } 
+    }
     if (closest_ind >= 0){
         for (int light = 0; light < lights.size(); light++){
-            //Point onSurface = r.mult(r.hits[closest_ind].t);
-            //Vec toLight = toVec(lights[light]->loc, onSurface);
-            //double diffuse = r.hits[closest_ind].normal.dot(toLight);
-            //diffuse = (diffuse < 0 ) ? 0 : diffuse;
+            Point onSurface = r.mult(r.hits[closest_ind].t);
+            Vec toLight = toVec(lights[light]->loc, onSurface);
+            toLight.normalize();
+            double diffuse = r.hits[closest_ind].normal.dot(toLight);
+            diffuse = (diffuse < 0 ) ? 0 : diffuse;
             Color shading = r.hits[closest_ind].shape_obj->get_shading(r, closest_ind);
-            c.addSample(shading);
-            //c.addSample(r.hits[closest_ind].shape_obj->get_shading(r, closest_ind) * diffuse * lights[light]->get_shading(r, closest_ind));
+            if (r.hits[closest_ind].shape_obj->isA<Triangle>()) c.addSample(shading);
+            else c.addSample(shading * diffuse * lights[light]->get_shading(r, closest_ind));
         }
     }
     else c.addSample(blackBackground());
@@ -74,9 +80,11 @@ void World::rayShadow(Color & c, Ray &r, int closestInd){
     for (int light = 0; light < lights.size(); light++){
         Point onSurface = r.mult(r.hits[closestInd].t);
         Vec toLight = toVec(lights[light]->loc, onSurface);
-        Ray shadowRay = Ray(onSurface, toLight);
+        Ray shadowRay = Ray(onSurface + 0.001*toLight, toLight);
         for (int i = 0; i < objects.size(); i++){ objects[i]->intersect(shadowRay); }
-        for (int i = 0; i < shadowRay.hits.size(); i++){ if (shadowRay.hits[i].t < 1.0) { c.addSample(shadow); break; } }
+        for (int i = 0; i < shadowRay.hits.size(); i++){ 
+            if (shadowRay.hits[i].t < 1) c.addSample(shadow);
+        }
     }
 }
 
@@ -95,7 +103,7 @@ void World::render(){
                 cerr << "Sample " << to_string(p) << r.dir << endl;
                 int indInt = rayColor(nextColor, r);
                 //std::cerr << " " << std::to_string(indInt);
-                //rayShadow(nextRow[ind], r, indInt);
+                if (indInt >= 0) rayShadow(nextColor, r, indInt);
             }
             nextRow.push_back(nextColor);
             //std::cerr << std::endl;

@@ -51,9 +51,9 @@ public:
     Vec(const Triplet &t);
 	Vec()=default;
     void normalize();
-    double collapse();
+    double collapse(); //sum the components
     double collapse(Vec &v);
-    double len();
+    double len(); 
     double dot(Vec& v2);
     Vec cross(Vec& v2);
     friend ostream& operator<<(ostream& out, const Vec& v);
@@ -77,7 +77,7 @@ public:
     double r();
     double g();
     double b();
-    void addSample(Color c);
+    void addSample(Color c); //adds together colors and keeps track of how many were added to allow for averaging
     void scale();
     Color(double p1, double p2, double p3);
     Color(double p1, double p2, double p3, int s);
@@ -88,8 +88,8 @@ public:
     void print(); //pass original values to ostream instead of scaling
     friend ostream& operator<<(ostream& out, const Color& v);
 };
-Color scale(Color c);
-Vec toVec(Point &t1, Point &t2); //origin t1
+Color scale(Color c); //bring values within [0,1]
+Vec toVec(Point &t1, Point &t2); //vector in direction t1 from point t2
 Vec normalize(const Vec & v);
 inline bool close(double d, double target = 0.0){ return ((d >= (target - 1e-5)) && (d <= (target + 1e-5))); }
 

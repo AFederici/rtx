@@ -16,10 +16,11 @@ class Ray;
 class Shapes {
 public:
     double material_const;
-    virtual Color get_shading(Ray &r, int ind) = 0;
-    virtual int intersect(Ray& r) = 0;
-    virtual Vec norm(Point intersection) = 0;
-    virtual ~Shapes() {};
+    virtual Color get_shading(Ray &r, int ind) = 0; //returns an RGB based on the hit struct
+    virtual int intersect(Ray& r) = 0; //check whether a ray intersects a shape
+    virtual Vec norm(Point intersection) = 0; //get the norm at a point
+    virtual ~Shapes() {};  
+    //check what sub-class an object is
     template<typename T>
     bool isA() {
         return (dynamic_cast<T*>(this) != NULL);
@@ -27,17 +28,18 @@ public:
 };
 
 struct hit {
-    double t;
+    double t; //multiplier for where a ray intersects a shape, t from (p = o + td)
     Point p; //needed for bary mostly
-    Shapes * shape_obj;
-    Vec normal;
-    bool front_face;
+    Shapes * shape_obj; //reference the shape an intersection happened at
+    Vec normal; //normal vector at intersection 
+    bool front_face; //if hit was the side opposite the incoming vectors direction
 };
 
 class Ray { 
 public:
     Ray(Point origin, Vec d);
-    Point mult(double t);
+    Point mult(double t); //returns o + t*d
+    //set normal to be outwards facing -> referenced from https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/creatingourfirstraytracedimage
     inline void set_normal(Vec outward_normal, int ind) {
         hits[ind].front_face = (dir.dot(outward_normal) < 0.0);
         hits[ind].normal = hits[ind].front_face ? outward_normal : -1.0*outward_normal;
@@ -89,6 +91,7 @@ public:
     Triangle(Point v1, Point v2, Point v3, double material);
 };
 
+//used for point lights
 class Dot: public Shapes {
 public:
     ~Dot(){};

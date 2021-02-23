@@ -1,8 +1,8 @@
 #include "../inc/View.h"
 
-View::View(int width, int height, int sideLen, double dist){
+View::View(int width, double sideLen, double dist){
     h_res = width;
-    v_res = height;
+    v_res = h_res / aspect_ratio;
     pixel_size = sideLen;
     d = dist;
 }
@@ -47,3 +47,5 @@ vector<Point> View::getMultiJittered(int row, int col){
     }
     return ret;
 }
+
+Point View::getLookAt(int row, int col, double x_off = 0.5, double y_off = 0.5) { return Point(pixel_size * (row - (h_res/2.0) + x_off), pixel_size * (col - (v_res/2.0) + y_off), -d); }
