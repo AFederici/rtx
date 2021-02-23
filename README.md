@@ -1,4 +1,4 @@
-# rtx
+# rtx :( last code submit was before the deadline have mercy. Extra time spent on pretty submissions
 References: 
 Uses are mentioned within the code as well <br>
 https://illinois-cs419.github.io
