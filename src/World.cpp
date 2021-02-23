@@ -67,7 +67,8 @@ int World::rayColor(Color & c, Ray &r) {
             double diffuse = r.hits[closest_ind].normal.dot(toLight);
             diffuse = (diffuse < 0 ) ? 0 : diffuse;
             Color shading = r.hits[closest_ind].shape_obj->get_shading(r, closest_ind);
-            if (r.hits[closest_ind].shape_obj->isA<Triangle>()) c.addSample(shading);
+            //dont shade triangle since 2d and donth shade ortho
+            if (isOrtho || r.hits[closest_ind].shape_obj->isA<Triangle>()) c.addSample(shading);
             else c.addSample(shading * diffuse * lights[light]->get_shading(r, closest_ind));
         }
     }
@@ -103,7 +104,7 @@ void World::render(){
                 cerr << "Sample " << to_string(p) << r.dir << endl;
                 int indInt = rayColor(nextColor, r);
                 //std::cerr << " " << std::to_string(indInt);
-                if (indInt >= 0) rayShadow(nextColor, r, indInt);
+                if (!isOrtho && (indInt >= 0)) rayShadow(nextColor, r, indInt);
             }
             nextRow.push_back(nextColor);
             //std::cerr << std::endl;

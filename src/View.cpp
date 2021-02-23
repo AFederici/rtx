@@ -13,6 +13,13 @@ View::View(){
     d = 1;
 }
 
+View::View(int height, int width, double sideLen, double dist){
+    h_res = width;
+    v_res = height;
+    pixel_size = sideLen;
+    d = dist;
+}
+
 int View::getW() { return h_res; }
     
 int View::getH() { return v_res; }

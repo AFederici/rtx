@@ -20,6 +20,7 @@ public:
     double d;
     inline double random_double(double min, double max) { return min + (max-min)*rrand();}
     View(int width, double sideLen, double d);
+    View(int height, int width, double sideLen, double d);
     View();
     vector<Point> getMultiJittered(int row, int col);
     vector<Point> getSingleRay(int row, int col);

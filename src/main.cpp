@@ -4,7 +4,7 @@
 
 int main(){
     Cam cam = Cam(Vec(0,1,0), Point(0,3,3), Point(0,0,0));
-    View v = View(1200, 0.5, 7);
+    View v = View(500,500, 1, 7);
     World w(v, cam);
     //w.isOrtho = true;
     //w.setNoSampling();

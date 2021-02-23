@@ -8,9 +8,16 @@ Sphere::Sphere(Point c, double r){
 }
 Sphere::Sphere(Point c, double r, double material) {center = c; radius = r; material_const = material;}
 
+
 Color Sphere::get_shading(Ray &r, int ind){
     return 0.5*Color(r.hits[ind].normal.x+1, r.hits[ind].normal.y+1, r.hits[ind].normal.z+1);
 }
+
+//if ortho use this one
+/*
+Color Sphere::get_shading(Ray &r, int ind){
+    return Color(0.0,0.0,0.8);
+}*/
 
 double sign(double b){ return (-b > 0) ? 1.0 : -1.0; }
 
