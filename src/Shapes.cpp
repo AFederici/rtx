@@ -99,7 +99,7 @@ int Plane::intersect(Ray& r){
 }
 
 int Triangle::intersect(Ray &r){
-    /*
+    /* course notes but not used
     Vec e1 = toVec(p1,p3);
     Vec e2 = toVec(p2,p3);
     Vec q = r.dir.cross(e2);
