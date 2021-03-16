@@ -6,17 +6,26 @@
 #include <typeinfo>
 #include <typeindex>
 #include <string>
+#include <math.h>
+#include <stdio.h>
+#include <fstream>
 
 #define DEFAULT_MATERIAL_CONST 0.5
 #define T_MIN 0
-#define T_MAX 100
+#define T_MAX 500
 
 using namespace std; 
 class Ray; 
+struct Material {
+    Color ambient;
+    Color diffuse;
+    Color specular;
+    double shiny;
+};
+
 class Shapes {
 public:
-    double material_const;
-    virtual Color get_shading(Ray &r, int ind) = 0; //returns an RGB based on the hit struct
+    Material material;
     virtual int intersect(Ray& r) = 0; //check whether a ray intersects a shape
     virtual Vec norm(Point intersection) = 0; //get the norm at a point
     virtual ~Shapes() {};  
@@ -25,6 +34,14 @@ public:
     bool isA() {
         return (dynamic_cast<T*>(this) != NULL);
     }
+    void setMaterial(Material m) { material = m; }
+    void addShader(string s, Color c){
+        if (s == "ambient") material.ambient = c;
+        if (s == "diffuse") material.diffuse = c;
+        if (s == "specular") material.specular = c;
+        if (s == "shiny") material.shiny = c[0];
+    }
+    void addShader(double shiny) { material.shiny = shiny; }
 };
 
 struct hit {
@@ -32,7 +49,6 @@ struct hit {
     Point p; //needed for bary mostly
     Shapes * shape_obj; //reference the shape an intersection happened at
     Vec normal; //normal vector at intersection 
-    bool front_face; //if hit was the side opposite the incoming vectors direction
 };
 
 class Ray { 
@@ -40,9 +56,9 @@ public:
     Ray(Point origin, Vec d);
     Point mult(double t); //returns o + t*d
     //set normal to be outwards facing -> referenced from https://raytracing.github.io/books/RayTracingInOneWeekend.html#addingasphere/creatingourfirstraytracedimage
+    //if dot product negative, normal is opposite direction as ray which we want
     inline void set_normal(Vec outward_normal, int ind) {
-        hits[ind].front_face = (dir.dot(outward_normal) < 0.0);
-        hits[ind].normal = hits[ind].front_face ? outward_normal : -1.0*outward_normal;
+        hits[ind].normal = (dir.dot(outward_normal) < 0.0) ? outward_normal : -1*outward_normal;
     }
     inline Vec& getDir(){ return dir; };
     Point o;
@@ -57,38 +73,23 @@ public:
     Vec e1; Vec e2; Vec e3;
     Vec nhat;
     Plane(double ax, double by, double cz, double dShift);
-    Plane(double ax, double by, double cz, double dShift, double material);
     Plane() {};
     int intersect(Ray& r) override;
     void setNorm();
     void setPoints();
     Vec norm(Point intersection) override;
     double a; double b; double c; double d;
-    Color get_shading(Ray &r, int ind) override;
     ~Plane(){};
 };
 
 class Sphere: public Shapes {
 public:
     Sphere(Point c, double r);
-    Sphere(Point c, double r, double material);
     Vec norm(Point intersection) override;
     int intersect(Ray& r) override;
     Point center;
     double radius;
-    Color get_shading(Ray &r, int ind) override;
     ~Sphere(){};
-};
-
-class Triangle: public Plane {
-public:
-    double area;
-    Color c1; Color c2; Color c3;
-    int intersect(Ray& r) override;
-    Color get_shading(Ray &r, int ind) override;
-    void setColoring(Color c1, Color c2, Color c3);
-    Triangle(Point v1, Point v2, Point v3);
-    Triangle(Point v1, Point v2, Point v3, double material);
 };
 
 //used for point lights
@@ -99,7 +100,17 @@ public:
     Vec norm(Point intersection) override;
     Point loc;
     Dot(Point l);
-    Color get_shading(Ray &r, int ind) override;
+    Dot(const Dot &d);
+    Dot() {};
+};
+
+class Triangle: public Plane {
+public:
+    double area;
+    Dot v1; Dot v2; Dot v3;
+    int intersect(Ray& r) override;
+    void setNorm();
+    Triangle(Dot v1, Dot v2, Dot v3);
 };
 
 

@@ -12,7 +12,8 @@ using namespace std;
 
 #define MODE "P3"
 
-const Color shadow = Color(0.1,0.1,0.1);
+const Color shadow = Color(0.01,0.01,0.01);
+const double ambience = 0.2;
 
 class World {
 public:
@@ -29,8 +30,9 @@ public:
     Ray getRay(Point look); //generate a ray into the world based on camera and point on viewplane
     void savePPM(ostream& ostr); //save output to file
     void debugPPM(); //write PPM to cout
-    int rayColor(Color & c,Ray &r); //find the nearest ray intersection and update the color. Shading also computed here 
-    void rayShadow(Color & c, Ray &r, int ind); //adjust the color where a ray hit based on shadows here
+    int rayIntersection(Ray &r); //find the nearest ray intersection and update the color. Shading also computed here 
+    Color computeShading(Ray &r, int closest_ind);
+    int rayShadow(Ray &r, int ind); //adjust the color where a ray hit based on shadows here
     void addLight(Dot * s); //add light to vector
     void addObj(Shapes * s); //add object to vector
     void render(); //do ray tracing

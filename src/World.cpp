@@ -18,18 +18,20 @@ void World::setNoSampling() { sampling = false; }
 void World::savePPM(ostream& ostr){
     ostr << MODE << endl << to_string(viewPlane.getW()) << " " << to_string(viewPlane.getH()) << endl << to_string(MAX_COLOR) << endl;
     for (int row = output.size() - 1; row >= 0; row--){
-        cerr << "\rrow: " << row << ',';
+        //cerr << "\rrow: " << row << ',';
         for (int col = 0; col < output[0].size(); col++){
             ostr << output[row][col] << endl;
         }
     }
-    cerr << endl;
+    //cerr << endl;
 }
 
 Ray World::getRay(Point look){
     if (isOrtho) return Ray(look, Vec(0,0,-1));
     Point worldView = camera.u*look.x + camera.v*look.y + camera.w*look.z;
-    Vec directionVec = toVec(worldView, camera.eye);
+    worldView += camera.eye;
+    Vec directionVec = toVec(camera.eye, worldView);
+    directionVec.normalize();
     Ray r = Ray(camera.eye, directionVec);
     return r;
 }
@@ -48,66 +50,69 @@ Color blueGradientBackground(Ray &r) {
     return (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0);
 }
 
-int World::rayColor(Color & c, Ray &r) {
+int World::rayIntersection(Ray &r) {
     for (int i = 0; i < objects.size(); i++){ objects[i]->intersect(r); }
-    int closest_t = T_MAX;
+    int closest_t = T_MAX; 
     int closest_ind = -1;
-    cerr << "Ray Intersections:" << to_string(r.hits.size()) << endl;
     for (int i = 0; i < r.hits.size(); i++){ 
-        if (r.hits[i].t < closest_t) { 
+        if ((r.hits[i].t < closest_t) && (r.hits[i].t >= T_MIN)) { 
             closest_t = r.hits[i].t; 
             closest_ind = i; 
         } 
     }
-    if (closest_ind >= 0){
-        for (int light = 0; light < lights.size(); light++){
-            Point onSurface = r.mult(r.hits[closest_ind].t);
-            Vec toLight = toVec(lights[light]->loc, onSurface);
-            toLight.normalize();
-            double diffuse = r.hits[closest_ind].normal.dot(toLight);
-            diffuse = (diffuse < 0 ) ? 0 : diffuse;
-            Color shading = r.hits[closest_ind].shape_obj->get_shading(r, closest_ind);
-            //dont shade triangle since 2d and donth shade ortho
-            if (isOrtho || r.hits[closest_ind].shape_obj->isA<Triangle>()) c.addSample(shading);
-            else c.addSample(shading * diffuse * lights[light]->get_shading(r, closest_ind));
-        }
-    }
-    else c.addSample(blackBackground());
     return closest_ind;
 }
 
+Color World::computeShading(Ray &r, int closest_ind){
+    if (closest_ind < 0) return Color(0.0,0.0,0.0);
+    hit h = r.hits[closest_ind];
+    Color c = h.shape_obj->material.ambient;
+    if (isOrtho) return c;
+    //if (isOrtho || r.hits[closest_ind].shape_obj->isA<Triangle>()) 
+    Point onSurface = r.mult(h.t);
+    Vec N = h.shape_obj->norm(onSurface);
+    Vec toCam = toVec(onSurface, camera.eye);
+    for (int light = 0; light < lights.size(); light++){
+        Material lighting = lights[light]->material;
+        Vec toLight = toVec(lights[light]->loc, onSurface);
+        Vec R = (2*N*N.dot(toLight)) - toLight;
+        c += (lighting.diffuse*toLight.dot(N)*h.shape_obj->material.diffuse);
+        c += (lighting.specular*pow(R.dot(toCam),h.shape_obj->material.shiny)*h.shape_obj->material.diffuse);
+    }
+    return c;
+}
 
-void World::rayShadow(Color & c, Ray &r, int closestInd){
+int World::rayShadow(Ray &r, int closestInd){
+    if (closestInd < 0 || isOrtho) return 0;
     for (int light = 0; light < lights.size(); light++){
         Point onSurface = r.mult(r.hits[closestInd].t);
-        Vec toLight = toVec(lights[light]->loc, onSurface);
-        Ray shadowRay = Ray(onSurface + 0.001*toLight, toLight);
-        for (int i = 0; i < objects.size(); i++){ objects[i]->intersect(shadowRay); }
-        for (int i = 0; i < shadowRay.hits.size(); i++){ 
-            if (shadowRay.hits[i].t < 1) c.addSample(shadow);
+        Vec toLight = toVec(onSurface, lights[light]->loc);
+        Ray shadowRay = Ray(onSurface + 0.01*normalize(toLight), toLight);
+        int i = 0;
+        while (i < objects.size()) {  
+            if (objects[i++]->intersect(shadowRay)){
+                if ((shadowRay.hits[0].t <= 1) && (shadowRay.hits[0].shape_obj != r.hits[closestInd].shape_obj)) return 1;
+            }
         }
     }
+    return 0;
 }
 
 void World::render(){
-    for (int j = 0; j < viewPlane.v_res; j++) {
-        std::cerr << "\rScanlines remaining: " << viewPlane.h_res - j << endl;
+    for (int row = 0; row < viewPlane.v_res; row++) {
+        std::cerr << "\rScanlines remaining: " << viewPlane.h_res - row << endl;
         vector<Color> nextRow;
-        for (int i = 0; i < viewPlane.h_res; i++) {
-            int ind = nextRow.size() - 1; 
+        for (int col = 0; col < viewPlane.h_res; col++) {
             Color nextColor = Color(0.0,0.0,0.0,0.0);
-            vector<Point> samples = (sampling) ? viewPlane.getMultiJittered(i,j) : viewPlane.getSingleRay(i,j);
-            cerr << "Pixel (r,c): (" << to_string(j) << "," << to_string(i) << ")" << endl; 
+            vector<Point> samples = (sampling) ? viewPlane.getMultiJittered(col,row) : viewPlane.getSingleRay(col,row);
             for (int p = 0; p < samples.size(); p++){
                 Ray r = getRay(samples[p]);
-                //Ray r = Ray(Point(0,0,0), samples[p]);
-                cerr << "Sample " << to_string(p) << r.dir << endl;
-                int indInt = rayColor(nextColor, r);
-                //std::cerr << " " << std::to_string(indInt);
-                if (!isOrtho && (indInt >= 0)) rayShadow(nextColor, r, indInt);
+                int indInt = rayIntersection(r);
+                Color shading = computeShading(r,indInt);
+                shading = rayShadow(r, indInt) ? (shading + shadow) / 2 : shading;
+                nextColor.addSample(shading);
             }
             nextRow.push_back(nextColor);
-            //std::cerr << std::endl;
         }
         output.push_back(nextRow);
     }

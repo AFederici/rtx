@@ -63,6 +63,12 @@
         "__tree": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "any": "cpp",
+        "iomanip": "cpp",
+        "variant": "cpp",
+        "deque": "cpp",
+        "fstream": "cpp",
+        "stack": "cpp"
     }
 }

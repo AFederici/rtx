@@ -1,1 +1,6 @@
 mp1_Imgs/
+*.dSYM/*
+*.ppm
+Rtx.dSYM/Contents/*
+.DS_Store
+Rtx.dSYM/Contents/Resources/DWARF/Rtx

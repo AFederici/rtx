@@ -2,16 +2,13 @@
 
 
 Sphere::Sphere(Point c, double r){
-    material_const = DEFAULT_MATERIAL_CONST;
     center = c;
     radius = r;
 }
-Sphere::Sphere(Point c, double r, double material) {center = c; radius = r; material_const = material;}
 
-
-Color Sphere::get_shading(Ray &r, int ind){
-    return 0.5*Color(r.hits[ind].normal.x+1, r.hits[ind].normal.y+1, r.hits[ind].normal.z+1);
-}
+//Color Sphere::get_shading(Ray &r, int ind){
+//    return 0.5*Color(r.hits[ind].normal.x, r.hits[ind].normal.y, r.hits[ind].normal.z);
+//}
 
 //if ortho use this one
 /*
@@ -36,8 +33,9 @@ int Sphere::intersect(Ray& r){
     double q = -0.5 * (b + (sign(b)*sqrt(discrim)));
     if (close(discrim)) { h1.t = -b / (2.0*a); }//one intersection
     else if (discrim > 0){ //two intersection points
-        h1.t = (-b - sqrt(discrim)) / (2.0*a); 
-        //h2.t = q / a; 
+        h1.t = c / q;
+        h2.t = q / a;
+        //cerr << to_string(h1.t) << " " << to_string(h2.t) << endl; 
         //if ((h1.t > h2.t) && (h2.t >= T_MIN)) h1.t = (T_MIN) - 1;
         //else h2.t = (T_MIN) - 1;
     }
@@ -48,48 +46,64 @@ int Sphere::intersect(Ray& r){
 
 
 Vec Sphere::norm(Point intersection){
+    //cerr << "radius " << to_string(radius) << endl;
     zeroDiv(radius); 
-    Vec v = toVec(intersection, center); 
+    Vec v = toVec(center, intersection); 
     v.normalize(); 
     return v;
-}
-
-//pass in the norm, kinda ugly rn
-Color Plane::get_shading(Ray &r, int ind){
-    return Color(1,0,0);
 }
 
 //https://math.stackexchange.com/questions/1755856/calculate-arbitrary-points-from-a-plane-equation
 void Plane::setPoints(){
     double denom = (a*a) + (b*b) + (c*c);
-    p3 = Point(a*d, b*d, c*d) / denom;
+    p3 = -1*Point(a*d, b*d, c*d) / denom;
     p1 = p3 + Point(c-b, a-c, b-a);
     p2 = p3 + Point((a*b) + (a*c) - (b*b) - (c*c), (b*a) + (b*c) - (a*a) - (c*c), (c*a) + (c*b) - (a*a) - (b*b));
+
 }
 
 void Plane::setNorm(){
-    e1 = toVec(p3,p2);
-    e2 = toVec(p1,p3);
-    e3 = toVec(p2,p1);
+    e1 = toVec(p2,p3);
+    e2 = toVec(p3,p1);
+    e3 = toVec(p1,p2);
     nhat = normalize(e1.cross(e2));
+    if (e1.cross(e2).dot(nhat) < 0){
+        Point temp = Point(p1);
+        p1 = p3;
+        p3 = temp;
+        setNorm();
+    }
+}
+
+void Triangle::setNorm(){
+    e1 = toVec(p2,p3);
+    e2 = toVec(p3,p1);
+    e3 = toVec(p1,p2);
+    nhat = normalize(e1.cross(e2));
+    if (e1.cross(e2).dot(nhat) < 0){
+        Point temp = Point(p1);
+        p1 = p3;
+        p3 = temp;
+        Dot tempD = Dot(v1);
+        v1 = v3;
+        v3 = tempD;
+        setNorm();
+    }
 }
 
 Plane::Plane(double ax, double by, double cz, double dShift) {
-    a = ax; b = by; c = cz; d = dShift; material_const = DEFAULT_MATERIAL_CONST;
+    a = ax; b = by; c = cz; d = dShift;
     setPoints(); setNorm();
 }
 
-Plane::Plane(double ax, double by, double cz, double dShift, double material) {
-     a = ax; b = by; c = cz; d = dShift; material_const = material;
-     setPoints(); setNorm();
-}
-
-
 int Plane::intersect(Ray& r){
     hit h1; h1.shape_obj = this;
-    double denom = r.dir.dot(nhat);
+    double denom = nhat.dot(r.dir);
+    //cerr << to_string(denom) << endl;
     if (close(denom)) return 0;
-    h1.t = toVec(p3,r.o).dot(nhat) / denom; h1.p = r.mult(h1.t);
+    h1.t = Vec(p3-r.o).dot(nhat) / denom; 
+    h1.p = r.mult(h1.t);
+    //cerr << to_string(h1.t) << endl;
     if ((h1.t >= T_MIN) && (h1.t <= T_MAX)) { 
         r.hits.push_back(h1);
         r.set_normal(nhat, r.hits.size() - 1); 
@@ -99,14 +113,15 @@ int Plane::intersect(Ray& r){
 }
 
 int Triangle::intersect(Ray &r){
-    /* course notes but not used
-    Vec e1 = toVec(p1,p3);
-    Vec e2 = toVec(p2,p3);
+
+    // course notes
+    Vec e1 = toVec(p1,p2);
+    Vec e2 = toVec(p1,p3);
     Vec q = r.dir.cross(e2);
     double a = e1.dot(q);
-    if (a > -1e-5 && a < 1e-5) return 0;
+    if (close(a)) return 0;
     double f = 1.0 / a;
-    Vec s = toVec(r.o,p3);
+    Vec s = toVec(p1,r.o);
     double u = f * (s.dot(q));
     if (u < 0.0) return 0;
     Vec rv = s.cross(e1);
@@ -116,29 +131,36 @@ int Triangle::intersect(Ray &r){
     hit h1; h1.normal = norm(Point(p1)); h1.t = t; h1.p = Point(u,v,1.0-u-v); h1.shape_obj = this;
     r.hits.push_back(h1);
     return 1;
-    */
+    
+/*
     if (!Plane::intersect(r)) return 0;
     int ind = r.hits.size() - 1;
     Point p = r.hits[ind].p;
-    Vec d1 = toVec(p,p1); Vec d3 = toVec(p,p3); 
+    //cerr << p << endl;
+    Vec d1 = toVec(p1,p); Vec d3 = toVec(p3,p); 
     double at1 = (e1.cross(d3).dot(nhat) / 2.0) / area;
     double at2 = (e2.cross(d1).dot(nhat) / 2.0) / area;
     double at3 = 1 - (at1 + at2);
     r.hits[ind].p = Point(at1, at2, at3);
+    //cerr << r.hits[ind].p << endl;
     if ((r.hits[ind].p.x < 0.0 || r.hits[ind].p.y < 0.0 || r.hits[ind].p.z < 0.0)) { r.hits.pop_back(); return 0; }
     r.hits[ind].shape_obj = this;
     return 1;
+    */
 }
 
 Vec Plane::norm(Point unused){ return nhat;}
 
-Triangle::Triangle(Point v1, Point v2, Point v3) { p1 = v1; p2 = v2; p3 = v3; material_const = DEFAULT_MATERIAL_CONST; setNorm(); area = e1.cross(e2).dot(nhat) / 2; }
-Triangle::Triangle(Point v1, Point v2, Point v3, double material) { p1 = v1; p2 = v2; p3 = v3; material_const = material; setNorm(); area = e1.cross(e2).dot(nhat) / 2; }
-void Triangle::setColoring(Color col1, Color col2, Color col3){ c1 = col1; c2 = col2; c3 = col3; }
-Color Triangle::get_shading(Ray &r, int ind){ return (r.hits[ind].p.x * c1) + (r.hits[ind].p.y * c2) + (r.hits[ind].p.z * c3); }
+Triangle::Triangle(Dot d1, Dot d2, Dot d3) { 
+    v1 = Dot(d1); v2 = Dot(d2); v3 = Dot(d3); 
+    p1 = v1.loc; p2 = v2.loc; p3 = v3.loc;
+    setNorm(); 
+    area = e1.cross(e2).dot(nhat) / 2; 
+}
+//Color Triangle::get_shading(Ray &r, int ind){ return ((r.hits[ind].p.x * c1) + (r.hits[ind].p.y * c2) + (r.hits[ind].p.z * c3)) / 3.0; }
 Ray::Ray(Point origin, Vec d){ o = origin; dir = Vec(d);}
 Point Ray::mult(double t){ return o + (t*dir); }
 int Dot::intersect(Ray &r) { return 0;}
 Vec Dot::norm(Point intersection) { return Vec();}
 Dot::Dot(Point l) { loc = l; };
-Color Dot::get_shading(Ray &r, int ind){ return Color(212.0/255.0,235.0/255.0,255.0/255.0); }
+Dot::Dot(const Dot &d) { loc = d.loc; material = d.material;}
