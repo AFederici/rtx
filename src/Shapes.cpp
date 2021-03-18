@@ -4,6 +4,10 @@
 Sphere::Sphere(Point c, double r){
     center = c;
     radius = r;
+    aabb.push_back(center - radius);
+    aabb.push_back(center + radius);
+    aabb.push_back(center);
+    aabb.push_back(center);
 }
 
 //Color Sphere::get_shading(Ray &r, int ind){
@@ -156,11 +160,26 @@ Triangle::Triangle(Dot d1, Dot d2, Dot d3) {
     p1 = v1.loc; p2 = v2.loc; p3 = v3.loc;
     setNorm(); 
     area = e1.cross(e2).dot(nhat) / 2; 
+    Point smaller = Point(p1);
+    Point bigger = Point(p1);
+    smaller.x = min(min(smaller.x, p2.x), p3.x);
+    smaller.y = min(min(smaller.y, p2.y), p3.y);
+    smaller.z = min(min(smaller.z, p2.z), p3.z);
+    bigger.x = max(max(bigger.x, p2.x), p3.x);
+    bigger.y = max(max(bigger.y, p2.y), p3.y);
+    bigger.z = max(max(bigger.z, p2.z), p3.z);
+    Point centroid = smaller + ((bigger-smaller) / 2.0);   
+    aabb.push_back(smaller);
+    aabb.push_back(bigger);
+    aabb.push_back(centroid);
+    aabb.push_back(centroid);
 }
 //Color Triangle::get_shading(Ray &r, int ind){ return ((r.hits[ind].p.x * c1) + (r.hits[ind].p.y * c2) + (r.hits[ind].p.z * c3)) / 3.0; }
 Ray::Ray(Point origin, Vec d){ o = origin; dir = Vec(d);}
 Point Ray::mult(double t){ return o + (t*dir); }
 int Dot::intersect(Ray &r) { return 0;}
 Vec Dot::norm(Point intersection) { return Vec();}
+void Dot::setNormVec(Vec norm) { normVec = norm; }
+Vec Dot::getNormVec() { return normVec; }
 Dot::Dot(Point l) { loc = l; };
 Dot::Dot(const Dot &d) { loc = d.loc; material = d.material;}

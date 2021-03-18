@@ -12,15 +12,34 @@
 
 #define DEFAULT_MATERIAL_CONST 0.5
 #define T_MIN 0
-#define T_MAX 500
+#define T_MAX 1000
 
 using namespace std; 
+const static double maxD = numeric_limits<double>::max() - 5;
+const static double minD = -1*maxD;
 class Ray; 
 struct Material {
     Color ambient;
     Color diffuse;
     Color specular;
     double shiny;
+    friend Material operator*(const Material &m1, double d){ 
+        Material m2;
+        m2.ambient=m1.ambient*d;
+        m2.diffuse=m1.diffuse*d;
+        m2.specular=m1.specular*d;
+        m2.shiny=m1.shiny*d;
+        return m2;
+    }
+    friend Material operator*(double d, const Material &m1) { return m1*d; } 
+    friend Material operator+(const Material &m1, const Material &m2){ 
+        Material m3;
+        m3.ambient=m1.ambient+m2.ambient;
+        m3.diffuse=m1.diffuse+m2.diffuse;
+        m3.specular=m1.specular+m2.specular;
+        m3.shiny=m1.shiny+m2.shiny;
+        return m3;
+    }
 };
 
 class Shapes {
@@ -42,6 +61,8 @@ public:
         if (s == "shiny") material.shiny = c[0];
     }
     void addShader(double shiny) { material.shiny = shiny; }
+    vector<Point> aabb;
+    Material getColor() { return material; }
 };
 
 struct hit {
@@ -61,6 +82,7 @@ public:
         hits[ind].normal = (dir.dot(outward_normal) < 0.0) ? outward_normal : -1*outward_normal;
     }
     inline Vec& getDir(){ return dir; };
+    Vec inverseNorm;
     Point o;
     Vec dir;
     vector<hit> hits;
@@ -98,10 +120,13 @@ public:
     ~Dot(){};
     int intersect(Ray& r) override;
     Vec norm(Point intersection) override;
+    Vec normVec;
+    void setNormVec(Vec norm);
+    Vec getNormVec();
     Point loc;
+    Dot() { loc = Point(0.0,0.0,0.0); normVec = Vec(0.0,0.0,0.0); }
     Dot(Point l);
     Dot(const Dot &d);
-    Dot() {};
 };
 
 class Triangle: public Plane {
@@ -111,8 +136,7 @@ public:
     int intersect(Ray& r) override;
     void setNorm();
     Triangle(Dot v1, Dot v2, Dot v3);
+    Material getColor(Point baryCoord) { return baryCoord.x*v1.material + baryCoord.y*v2.material + baryCoord.z*v3.material;}
 };
-
-
 
 #endif //SHAPES_H

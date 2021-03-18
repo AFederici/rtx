@@ -321,6 +321,7 @@ TEST (World, rayIntersectionPerspective){
   w.addObj(&p1);
   w.addObj(&s1);
   w.addObj(&t1);
+  w.addObj(&p2);
   vector<Point> samples;
   samples = w.viewPlane.getSingleRay(0,0);
   int indInt;
@@ -386,13 +387,228 @@ TEST (World, rayIntersectionPerspective){
 }
 
 
-TEST (World, testGetRay){
+
+TEST (World, testSphereBVH){
+  Cam c = Cam();
+  View v = View(2, 2, 1, 1); //width, height
+  World w = World(v,c);
+  Sphere s1 = Sphere(Point(13,-1,0), 1);
+
+  Sphere s2 = Sphere(Point(4,1,-6), 1);
+  Sphere s3 = Sphere(Point(4,4,-6), 1);
+  cerr << "s2" << s2.aabb[1];
+  cerr << "s3" << s3.aabb[1];
+
+  Sphere s4 = Sphere(Point(1,0,0), 1);
+  Sphere s5 = Sphere(Point(2,0,0), 1);
+  Sphere s6 = Sphere(Point(1,2,0), 1);
+  Sphere s7 = Sphere(Point(2,2,0), 1);
+
+  Sphere s8 = Sphere(Point(1,4,0), 1);
+  Sphere s9 = Sphere(Point(2,4,0), 1);
+  Sphere s10 = Sphere(Point(1,5,0), 1);
+  Sphere s11 = Sphere(Point(2,5,0), 1);
+  w.addObj(&s1);
+  w.addObj(&s2);
+  w.addObj(&s3);
+  w.addObj(&s4);
+  w.addObj(&s5);
+  w.addObj(&s6);
+  w.addObj(&s7);
+  w.addObj(&s8);
+  w.addObj(&s9);
+  w.addObj(&s10);
+  w.addObj(&s11);
+  Node * tree = w.buildBVH(w.objects);
+  EXPECT_EQ(tree->_box.first, Point(0 , -2, -7));
+  EXPECT_EQ(tree->_box.second, Point(14 , 6, 1));
+  EXPECT_TRUE(tree->empty);
+
+  Node * firstRight = tree->right;
+  ASSERT_NE(firstRight, (Node * )nullptr);
+  EXPECT_EQ(firstRight->_box.first, Point(12 , -2, -1));
+  EXPECT_EQ(firstRight->_box.second, Point(14 , 0, 1));
+  EXPECT_FALSE(firstRight->empty);
+  EXPECT_EQ(firstRight->s.size(), 1);
+  EXPECT_EQ(firstRight->s[0] , &s1);
+
+  Node * firstLeft = tree->left;
+  EXPECT_EQ(firstLeft->_box.first, Point(0 , -1, -7));
+  EXPECT_EQ(firstLeft->_box.second, Point(5 , 6, 1));
+  EXPECT_TRUE(firstLeft->empty);
+
+  Node * secondLeft = firstLeft->left;
+  Node * secondRight = firstLeft->right;
+  ASSERT_NE(secondLeft, (Node * )nullptr);
+  EXPECT_EQ(secondLeft->_box.first, Point(3 , 0, -7));
+  EXPECT_EQ(secondLeft->_box.second, Point(5 , 5, -5));
+  EXPECT_FALSE(secondLeft->empty);
+  EXPECT_EQ(secondLeft->s.size(), 2);
+  EXPECT_TRUE(secondLeft->s[0] == &s2 || secondLeft->s[0] == &s3);
+  EXPECT_TRUE(secondLeft->s[1] == &s2 || secondLeft->s[1] == &s3);
+
+  EXPECT_EQ(secondRight->_box.first, Point(0 , -1, -1));
+  EXPECT_EQ(secondRight->_box.second, Point(3 , 6, 1));
+  EXPECT_TRUE(secondRight->empty);
+
+  Node * thirdLeft = secondRight->left;
+  ASSERT_NE(thirdLeft, (Node * )nullptr);
+  EXPECT_EQ(thirdLeft->_box.first, Point(0 , -1, -1));
+  EXPECT_EQ(thirdLeft->_box.second, Point(3 , 3, 1));
+  EXPECT_FALSE(thirdLeft->empty);
+  EXPECT_EQ(thirdLeft->s.size(), 4);
+  EXPECT_TRUE(thirdLeft->s[0] == &s4 || thirdLeft->s[0] == &s5 || thirdLeft->s[0] == &s6 || thirdLeft->s[0] == &s7);
+  EXPECT_TRUE(thirdLeft->s[1] == &s4 || thirdLeft->s[1] == &s5 || thirdLeft->s[1] == &s6 || thirdLeft->s[1] == &s7);
+  EXPECT_TRUE(thirdLeft->s[2] == &s4 || thirdLeft->s[2] == &s5 || thirdLeft->s[2] == &s6 || thirdLeft->s[2] == &s7);
+  EXPECT_TRUE(thirdLeft->s[3] == &s4 || thirdLeft->s[3] == &s5 || thirdLeft->s[3] == &s6 || thirdLeft->s[3] == &s7);
+
+  Node * thirdRight = secondRight->right;
+  ASSERT_NE(thirdRight, (Node * )nullptr);
+  EXPECT_EQ(thirdRight->_box.first, Point(0 , 3, -1));
+  EXPECT_EQ(thirdRight->_box.second, Point(3 , 6, 1));
+  EXPECT_FALSE(thirdRight->empty);
+  EXPECT_EQ(thirdRight->s.size(), 4);
+  EXPECT_TRUE(thirdRight->s[0] == &s8 || thirdRight->s[0] == &s9 || thirdRight->s[0] == &s10 || thirdRight->s[0] == &s11);
+  EXPECT_TRUE(thirdRight->s[1] == &s8 || thirdRight->s[1] == &s9 || thirdRight->s[1] == &s10 || thirdRight->s[1] == &s11);
+  EXPECT_TRUE(thirdRight->s[2] == &s8 || thirdRight->s[2] == &s9 || thirdRight->s[2] == &s10 || thirdRight->s[2] == &s11);
+  EXPECT_TRUE(thirdRight->s[3] == &s8 || thirdRight->s[3] == &s9 || thirdRight->s[3] == &s10 || thirdRight->s[3] == &s11);
+
+}
+
+
+
+TEST (World, testTriangleBVH){
   View v = View(200, 100, 2, 3); //width, height
   Cam c = Cam();
-  World wPerspective = World(v,c);
-  World wOrtho = World(v);
-  EXPECT_EQ(wOrtho.getRay(Point(-50,-60,-3)).mult(1), Point(-50,-60,-4));
-  EXPECT_EQ(wPerspective.getRay(Point(-50,-60,-3)).mult(1), Point(-.63971,-.76766,-.03838383));
+  World w = World(v,c);
+  Triangle t1 = Triangle(Dot(Point(0,0,0)), Dot(Point(3,0,0)), Dot(Point(0,3,0))); //1,1
+  Triangle t2 = Triangle(Dot(Point(6,0,0)), Dot(Point(9,0,0)), Dot(Point(6,3,0))); //7,1
+  Triangle t5 = Triangle(Dot(Point(0,6,0)), Dot(Point(3,6,0)), Dot(Point(0,9,0))); //1,7
+
+  Triangle t3 = Triangle(Dot(Point(18,0,0)), Dot(Point(21,0,0)), Dot(Point(18,3,0))); //19,1
+  Triangle t4 = Triangle(Dot(Point(24,0,0)), Dot(Point(27,0,0)), Dot(Point(24,3,0))); //25.1
+
+  w.addObj(&t1);
+  w.addObj(&t2);
+  w.addObj(&t3);
+  w.addObj(&t4);
+  w.addObj(&t5);
+  Node * tree = w.buildBVH(w.objects);
+  EXPECT_EQ(tree->_box.first, Point(0 , 0, 0));
+  EXPECT_EQ(tree->_box.second, Point(27 , 9, 0));
+  EXPECT_TRUE(tree->empty);
+
+  Node * left = tree->left;
+  Node * right = tree->right;
+  ASSERT_NE(left, (Node * )nullptr);
+  EXPECT_EQ(left->_box.first, Point(0 , 0, 0));
+  EXPECT_EQ(left->_box.second, Point(9 , 9, 0));
+  EXPECT_FALSE(left->empty);
+  EXPECT_EQ(left->s.size(), 3);
+  EXPECT_TRUE(left->s[0] == &t1 || left->s[0] == &t2 || left->s[0] == &t5);
+  EXPECT_TRUE(left->s[1] == &t1 || left->s[1] == &t2 || left->s[1] == &t5);
+  EXPECT_TRUE(left->s[2] == &t1 || left->s[2] == &t2 || left->s[2] == &t5);
+
+  ASSERT_NE(right, (Node * )nullptr);
+  EXPECT_EQ(right->_box.first, Point(18 , 0, 0));
+  EXPECT_EQ(right->_box.second, Point(27 , 3, 0));
+  EXPECT_FALSE(right->empty);
+  EXPECT_EQ(right->s.size(), 2);
+  EXPECT_TRUE(right->s[0] == &t3 || right->s[0] == &t4);
+  EXPECT_TRUE(right->s[1] == &t3 || right->s[1] == &t4);
+}
+
+
+TEST (World, rayIntersectionBVH){
+  Cam c = Cam();
+  View v = View(2, 2, 1, 1); //width, height
+  World w = World(v,c);
+  Sphere s1 = Sphere(Point(-.5,.5,-2), 1);
+  Sphere s2 = Sphere(Point(-.5,-.5,-2), 1);
+  Triangle t1 = Triangle(Dot(Point(.5,.5,-1)), Dot(Point(.5,-.5,-1)), Dot(Point(-1,0,-10)));
+  w.addObj(&s1);
+  w.addObj(&s2);
+  w.addObj(&t1);
+
+  Sphere s3 = Sphere(Point(-.5,-.5,-7), 1);
+  Triangle t3 = Triangle(Dot(Point(.5,.5,-2)), Dot(Point(.5,-.5,-2)), Dot(Point(-1,0,-11)));
+  Sphere s4 = Sphere(Point(-.5,-.5,-8), 1);
+  Triangle t4 = Triangle(Dot(Point(.5,.5,-10)), Dot(Point(.5,-.5,-10)), Dot(Point(-1,0,-20)));
+  Sphere s5 = Sphere(Point(-50,-.5,-7), 1);
+  Triangle t5 = Triangle(Dot(Point(1,1,-2)), Dot(Point(1,-1,-1)), Dot(Point(-1,10,-10)));
+  Sphere s6 = Sphere(Point(10,10,-1), 1);
+  Triangle t6 = Triangle(Dot(Point(.5,.5,-10)), Dot(Point(.5,-.5,-10)), Dot(Point(-1,0,-15)));
+  Sphere s7 = Sphere(Point(-70,100,-2), 1);
+  Triangle t7 = Triangle(Dot(Point(3,.5,-1)), Dot(Point(3,-.5,-1)), Dot(Point(-3,0,-10)));
+  w.addObj(&s3);
+  w.addObj(&s4);
+  w.addObj(&s5);
+  w.addObj(&s6);
+  w.addObj(&s7);
+  w.addObj(&t3);
+  w.addObj(&t4);
+  w.addObj(&t5);
+  w.addObj(&t6);
+  w.addObj(&t7);
+  Node * tree = w.buildBVH(w.objects);
+  vector<Point> samples;
+  samples = w.viewPlane.getSingleRay(0,0);
+  int indInt;
+  for (int p = 0; p < samples.size(); p++){
+    Ray r = w.getRay(samples[p]);
+    EXPECT_EQ(r.dir,normalize(Vec(-.5,-.5,-1)));
+    indInt = w.rayIntersection(r, tree, true);
+    for (int j = 0; j < r.hits.size(); j++){
+      string s;
+      if (r.hits[j].shape_obj->isA<Triangle>()) s = "Triangle";
+      else s = "Sphere";
+      cerr << "hit " << to_string(j) << ": " << s << " at " << r.mult(r.hits[j].t);
+    }
+    cerr << endl;
+    EXPECT_EQ(r.hits[indInt].shape_obj,&s2);
+  }
+  samples = w.viewPlane.getSingleRay(1,0);
+  for (int p = 0; p < samples.size(); p++){
+    Ray r = w.getRay(samples[p]);
+    EXPECT_EQ(r.dir,normalize(Vec(.5,-.5,-1)));
+    indInt = w.rayIntersection(r, tree, true);
+    for (int j = 0; j < r.hits.size(); j++){
+      string s;
+      if (r.hits[j].shape_obj->isA<Triangle>()) s = "Triangle";
+      else s = "Sphere";
+      cerr << "hit " << to_string(j) << ": " << s << " at " << r.mult(r.hits[j].t);
+    }
+    cerr << endl;
+    EXPECT_EQ(r.hits[indInt].shape_obj,&t1);
+  }
+  samples = w.viewPlane.getSingleRay(0,1);
+  for (int p = 0; p < samples.size(); p++){
+    Ray r = w.getRay(samples[p]);
+    EXPECT_EQ(r.dir,normalize(Vec(-.5,.5,-1)));
+    indInt = w.rayIntersection(r, tree, true);
+    for (int j = 0; j < r.hits.size(); j++){
+      string s;
+      if (r.hits[j].shape_obj->isA<Triangle>()) s = "Triangle";
+      else s = "Sphere";
+      cerr << "hit " << to_string(j) << ": " << s << " at " << r.mult(r.hits[j].t);
+    }
+    cerr << endl;
+    EXPECT_EQ(r.hits[indInt].shape_obj,&s1);
+  }
+  samples = w.viewPlane.getSingleRay(1,1);
+  for (int p = 0; p < samples.size(); p++){
+    Ray r = w.getRay(samples[p]);
+    EXPECT_EQ(r.dir,normalize(Vec(.5,.5,-1)));
+    indInt = w.rayIntersection(r, tree, true);
+    for (int j = 0; j < r.hits.size(); j++){
+      string s;
+      if (r.hits[j].shape_obj->isA<Triangle>()) s = "Triangle";
+      else s = "Sphere";
+      cerr << "hit " << to_string(j) << ": " << s << " at " << r.mult(r.hits[j].t);
+    }
+    cerr << endl;
+    EXPECT_EQ(r.hits[indInt].shape_obj,&t1);
+  }
 }
 
 //revisit all logic in world

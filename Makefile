@@ -2,7 +2,7 @@ APP := rtx
 TEST := runTest
 INC_DIR := ./inc
 CFLAGS := -g -Wall -std=c++11 -I$(INC_DIR)
-SRC_FILES := src/Cam.cpp src/Shapes.cpp src/Triplet.cpp src/View.cpp src/World.cpp
+SRC_FILES := src/Cam.cpp src/Shapes.cpp src/Triplet.cpp src/View.cpp src/World.cpp src/Mesh.cpp
 .PHONY: clean
 
 all: clean app
