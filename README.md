@@ -1,4 +1,8 @@
-# rtx :( last code submit was before the deadline have mercy. Extra time spent on pretty submissions
+# rtx
+
+BVH Design:
+https://docs.google.com/document/d/1UgNMRrpmCsX72PAzmSCv_sgAkh8_7kv12eaHEgt5rx4/edit?usp=sharing
+
 References: 
 Uses are mentioned within the code as well <br>
 https://illinois-cs419.github.io
