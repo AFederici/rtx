@@ -24,13 +24,16 @@ void Mesh::loadMesh(const char *filename)
       {
       case 'v':
             {
-                  
+                  //color the triangle's points
                   Dot * v = new Dot();
                   v->addShader("ambient", col);
                   v->addShader("diffuse", col);
                   v->addShader("specular", spec);
                   v->addShader("shiny", Color(0.0,.0,.0));
                   fin>>(v->loc.x)>>(v->loc.y)>>(v->loc.z);
+
+                  //affine transformation step
+                  //scale
                   v->loc.x *= 50;
                   v->loc.y *= 50;
                   v->loc.z *= 50;
@@ -46,7 +49,7 @@ void Mesh::loadMesh(const char *filename)
             {
                   int v1, v2, v3;
                   fin>>v1>>v2>>v3;
-                  //cerr << "1";
+                  //add half the normal (to scale by area) of this triangle to each vertex  
                   TriangleMesh * t = new TriangleMesh(verts[v1-1],verts[v2-1],verts[v3-1]);
                   t->vertex1->setNormVec(t->vertex1->getNormVec() + 0.5*t->nhat);
                   t->vertex2->setNormVec(t->vertex2->getNormVec() + 0.5*t->nhat);
@@ -57,7 +60,7 @@ void Mesh::loadMesh(const char *filename)
             break;
       }
    }
-   cerr << "3";
+   //normalize the normal vector of each vertex since the normal of 3 faces were added to each
    for (int v = 0; v < verts.size(); v++){
          verts[v]->setNormVec(normalize(verts[v]->getNormVec()));
    }     
