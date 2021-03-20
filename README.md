@@ -2,6 +2,7 @@
 
 BVH Design:
 https://docs.google.com/document/d/1UgNMRrpmCsX72PAzmSCv_sgAkh8_7kv12eaHEgt5rx4/edit?usp=sharing
+
 MP2 Note: the head on image of the mesh has discoloration on purpose - random color was added to the diffuse component of the material
 
 References: 
