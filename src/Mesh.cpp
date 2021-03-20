@@ -1,4 +1,5 @@
 #include "../inc/Mesh.h"
+#include "../inc/Triplet.h"
 
 Vec TriangleMesh::norm(Point baryC) {
     return baryC.x*vertex1->getNormVec() + baryC.y*vertex2->getNormVec() + baryC.z*vertex3->getNormVec();
@@ -9,10 +10,12 @@ void Mesh::loadMesh(const char *filename)
 {
    string s;
    ifstream fin(filename);
-   Color col = Color(171,164,144);
+   Color col = Color(151,144,130);
    Color dif = Color(.1, .9*rrand(), .1);
-   Color spec = Color(.3,.3,.3);
-
+   Color spec = Color(.0,.0,.0);
+   double rads = degrees_to_radians(45);
+   double cosTheta = cos(rads);
+   double sinTheta = sin(rads);
    col.scale();
    if(!fin) {cerr << " no file - " << filename << endl; return; }
    while(fin>>s)
@@ -24,11 +27,17 @@ void Mesh::loadMesh(const char *filename)
                   
                   Dot * v = new Dot();
                   v->addShader("ambient", col);
-                  v->addShader("diffuse", dif);
+                  v->addShader("diffuse", col);
                   v->addShader("specular", spec);
-                  v->addShader("shiny", Color(0.3,.3,.3));
+                  v->addShader("shiny", Color(0.0,.0,.0));
                   fin>>(v->loc.x)>>(v->loc.y)>>(v->loc.z);
-                  
+                  v->loc.x *= 50;
+                  v->loc.y *= 50;
+                  v->loc.z *= 50;
+                  //rotation
+                  //https://www.khanacademy.org/computing/computer-programming/programming-games-visualizations/programming-3d-shapes/a/rotating-3d-shapes
+                  v->loc.x = v->loc.x*cosTheta + v->loc.z * sinTheta;
+                  v->loc.z = v->loc.z*cosTheta - v->loc.x * sinTheta;
                   verts.push_back(v);
                   
             }

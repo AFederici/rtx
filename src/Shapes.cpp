@@ -121,7 +121,8 @@ int Triangle::intersect(Ray &r){
     // course notes
     Vec e1 = toVec(p1,p2);
     Vec e2 = toVec(p1,p3);
-    Vec q = r.dir.cross(e2);
+    Vec nr = normalize(r.dir);
+    Vec q = nr.cross(e2);
     double a = e1.dot(q);
     if (close(a)) return 0;
     double f = 1.0 / a;
@@ -129,10 +130,13 @@ int Triangle::intersect(Ray &r){
     double u = f * (s.dot(q));
     if (u < 0.0) return 0;
     Vec rv = s.cross(e1);
-    double v = f * r.dir.dot(rv);
+    double v = f * nr.dot(rv);
     if (v < 0.0 || (u + v) > 1.0) return 0;
     double t = f * (e2.dot(rv));
-    hit h1; h1.normal = norm(Point(p1)); h1.t = t; h1.p = Point(u,v,1.0-u-v); h1.shape_obj = this;
+    hit h1; h1.normal = norm(Point(p1)); 
+    h1.t = t; 
+    h1.p = Point(u,v,1.0-u-v); 
+    h1.shape_obj = this;
     r.hits.push_back(h1);
     return 1;
     

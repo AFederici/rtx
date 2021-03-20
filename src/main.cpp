@@ -22,16 +22,17 @@ void handler(int sig) {
 //mesh main
 int main(){
     signal(SIGFPE, handler); 
-    View v = View(400, 400, .003, 1); //width, height
-    Cam c = Cam(Point(-3,2,5), Point(1.5,-.5,-1), Vec(0,1,0));
+    //View v = View(400, 400, .1, 1); //width, height
+    View v = View(400, 400, .5, 1); //width, height
+    Cam c = Cam(Point(0,0,75), Point(0,0,0), Vec(0,1,0));
 
     World w = World(v,c);
-    Dot l = Dot(Point(0,0,1));
-    l.addShader("diffuse", Color(0.8,0.8,0.8));
+    Dot l = Dot(Point(0,100,1));
+    l.addShader("diffuse", Color(0.3,0.3,0.3));
     l.addShader("specular", Color(0.3,0.3,0.3));
     w.addLight(&l);
-    w.ambience = 0.3;
-    w.sampling_rate = 225;
+    w.ambience = 0.1;
+    w.sampling_rate = 64;
     Color col = Color(171,164,144);
     col.scale();
     srand( time(NULL) );

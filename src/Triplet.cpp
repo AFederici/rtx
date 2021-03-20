@@ -106,7 +106,7 @@ void Color::print(){
     cout << string(buf) << endl;
 }
 
-Color scale(Color c){ return (Color(c) / (1.0 * c.samples)) * (MAX_COLOR+0.999); }
+Color scale(Color c){ c.scale(); return c; }
 
 ostream& operator<<(ostream& out, const Color& c){
     Color c2 = Color(c.x, c.y, c.z, c.samples);

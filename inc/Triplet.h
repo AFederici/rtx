@@ -12,11 +12,11 @@ using namespace std;
 
 #define MAX_COLOR 255.0
 #define infinity = std::numeric_limits<double>::infinity()
-#define pi = 3.1415926535897932385
-#define degrees_to_radians(degrees) { return degrees * pi / 180.0; }
 #define zeroDiv(d) if (d == 0) { cerr << "div by zero" << endl; exit(1); }
+double static const pi = 3.1415926535897932385;
 inline double rrand() { return rand() / (RAND_MAX + 1.0); }
 inline bool close(double d, double target = 0.0){ return ((d >= (target - 1e-5)) && (d <= (target + 1e-5))); }
+inline double degrees_to_radians(double degrees) { return degrees * (double)pi / 180.0; }
 class Triplet {
 public:
     double x;

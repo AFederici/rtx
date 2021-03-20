@@ -173,8 +173,8 @@ Color World::computeShading(Ray &r, int closest_ind){
         Vec toLight = toVec(onSurface, lights[light]->loc);
         Vec R = (2*N*N.dot(toLight)) - toLight;
         toCam.normalize(); toLight.normalize(); R.normalize();
-        c += (lighting.diffuse*max(0.0,toLight.dot(N))*objMat.diffuse);
-        c += (lighting.specular*pow(max(0.0,R.dot(toCam)),objMat.shiny)*objMat.diffuse);
+        c += scale(lighting.diffuse*max(0.0,toLight.dot(N))*objMat.diffuse);
+        c += scale(lighting.specular*pow(max(0.0,R.dot(toCam)),objMat.shiny)*objMat.diffuse);
     }
     c.x = min(1.0,c.x);
     c.z = min(1.0,c.y);
@@ -318,7 +318,7 @@ void World::render(){
                 int indInt = (isAccel) ? rayIntersection(r, tree, true) : rayIntersection(r);
                 hits += ((indInt >= 0 ) ? 1 : 0);
                 Color shading = computeShading(r,indInt);
-                //shading = rayShadow(r, indInt, tree) ? (shading + shadow) / 2.0 : shading;
+                shading = rayShadow(r, indInt, tree) ? (shading + shadow) / 2.0 : shading;
                 nextColor.addSample(shading);
             }
             nextRow.push_back(nextColor);

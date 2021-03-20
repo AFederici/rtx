@@ -136,7 +136,7 @@ public:
     int intersect(Ray& r) override;
     void setNorm();
     Triangle(Dot v1, Dot v2, Dot v3);
-    Material getColor(Point baryCoord) { return baryCoord.x*v1.material + baryCoord.y*v2.material + baryCoord.z*v3.material;}
+    Material getColor(Point baryCoord) { return (baryCoord.x*v1.material + baryCoord.y*v2.material + baryCoord.z*v3.material)*(1.0/3.0);}
 };
 
 #endif //SHAPES_H
